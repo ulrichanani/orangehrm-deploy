@@ -6,7 +6,6 @@ services:
     container_name: db
     image: 'mysql:5.7'
     restart: unless-stopped
-    env_file: .env
     tty: true
     environment:
       - MYSQL_ROOT_PASSWORD=root
