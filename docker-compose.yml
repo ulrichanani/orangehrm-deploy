@@ -3,24 +3,24 @@ version: '3'
 services:
 
   db:
-    container_name: db
+    container_name: ${APP_ID}_db
     image: 'mysql:5.7'
     restart: unless-stopped
+    env_file: .env
     tty: true
     environment:
-      - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=app
     volumes:
-      - 'dbdata:/var/lib/mysql'
+      - 'ecom-dbdata:/var/lib/mysql'
       - ./mysql/my.cnf:/etc/mysql/my.cnf
     command: '--default-authentication-plugin=mysql_native_password'
     networks:
-      - app-network
+      - ecom_app_network
 
   php:
     build:
       context: ./php
-    container_name: app
+    container_name: ${APP_ID}_app
     restart: unless-stopped
     tty: true
     volumes:
@@ -30,28 +30,43 @@ services:
       - db
     working_dir: /app
     networks:
-      - app-network
+      - ecom_app_network
+
+  # web:
+  #   build: ./nginx
+  #   container_name: ${APP_ID}_web
+  #   restart: unless-stopped
+  #   tty: true
+  #   volumes:
+  #     - './app:/app'
+  #     - ./nginx/conf.d/:/etc/nginx/conf.d/
+  #   depends_on:
+  #     - php
+  #   ports:
+  #     - '${PORT:-80}:80'
+  #   networks:
+  #     - ecom_app_network
 
   web:
-    image: nginx:1.13.8-alpine
-    container_name: webserver
+    build: ./apache2
+    container_name: ${APP_ID}_web
     restart: unless-stopped
     tty: true
     volumes:
-      - './app:/app'
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - './app:/var/www/html/'
     depends_on:
+      - db
       - php
     ports:
-      - '81:80'
+      - '${PORT:-80}:80'
     networks:
-      - app-network
+      - ecom_app_network
 
 
 networks:
-  app-network:
+  ecom_app_network:
     driver: bridge
 
 volumes:
-  dbdata:
+  ecom-dbdata:
     driver: local
